@@ -4,18 +4,67 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mercure</title>
+    <title>Mercure - Connexion</title>
     <link rel="stylesheet" href="./public/styles.css" />
+    <script defer src="./dist/renderer.js"></script>
 </head>
 
-<body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
-    <main class="mx-auto flex min-h-screen max-w-5xl items-center justify-center p-8">
-        <section class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl">
-            <p class="text-xs uppercase tracking-[0.2em] text-zinc-400">Mercure</p>
-            <h1 class="mt-2 text-2xl font-semibold">UI starter</h1>
-            <p class="mt-3 text-sm text-zinc-300">
-                Tailwind est branche. Tu peux maintenant demarrer ton interface de messagerie.
-            </p>
+<body class="h-screen overflow-hidden bg-[#0D0D0D] text-zinc-100">
+    <main class="flex h-full items-center justify-center p-6 sm:p-10">
+        <section class="w-full max-w-md">
+            <div class="mb-8 space-y-4">
+                <img src="./public/logo.jpg" alt="Logo Mercure"
+                    class="h-14 w-14 rounded-lg object-cover" />
+                <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-zinc-300">Mercure</p>
+                    <h2 class="mt-2 text-3xl font-extrabold text-zinc-100">Connexion</h2>
+                    <p class="mt-2 text-sm text-zinc-300">
+                        Connecte-toi avec ton compte AstraCode.
+                    </p>
+                </div>
+            </div>
+
+            <form id="login-form" class="space-y-5" novalidate>
+                <div class="space-y-2">
+                    <label for="email" class="text-sm font-medium text-zinc-200">Adresse email</label>
+                    <div class="field-shell">
+                        <input id="email" name="email" type="email" autocomplete="email" required
+                            class="field-input w-full px-4 py-3 text-zinc-100 outline-none transition placeholder:text-zinc-500"
+                            placeholder="exemple@astracode.dev" />
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="password" class="text-sm font-medium text-zinc-200">Mot de passe</label>
+                    <div class="field-shell">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required
+                            class="field-input w-full px-4 py-3 text-zinc-100 outline-none transition placeholder:text-zinc-500"
+                            placeholder="Ton mot de passe" />
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="inline-flex cursor-pointer items-center gap-2 text-zinc-300">
+                        <input id="remember-email" type="checkbox"
+                            class="h-4 w-4 appearance-none rounded bg-zinc-700 checked:bg-blue-500 focus:ring-blue-400" />
+                        Retenir mon email
+                    </label>
+                </div>
+
+                <button id="submit-button" type="submit"
+                    class="login-btn bg-zinc-700 hover:bg-blue-500 
+                    focus:ring-blue-400 inline-flex 
+                    w-full items-center justify-center 
+                    rounded px-4 py-3 text-sm 
+                    font-medium text-white transition 
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 
+                    disabled:cursor-not-allowed disabled:opacity-50 
+                    ">
+                    <span class="button-label">Se connecter</span>
+                </button>
+            </form>
+
+            <p id="form-status" class="mt-4 min-h-6 text-sm text-zinc-300" role="status" aria-live="polite"></p>
         </section>
     </main>
 </body>
