@@ -13,8 +13,8 @@ function createWindow(): void {
     ...(isWindows
       ? {
           titleBarOverlay: {
-            color: '#0D0D0D',
-            symbolColor: '#FFFFFF',
+            color: '#151515',
+            symbolColor: '#F4F4F5',
             height: 34,
           },
         }
@@ -26,7 +26,7 @@ function createWindow(): void {
     },
   });
 
-  win.loadFile('index.html');
+  win.loadFile(path.join(app.getAppPath(), 'src', 'view', 'login.html'));
 }
 
 app.whenReady().then(() => {
