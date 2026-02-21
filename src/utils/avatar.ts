@@ -14,3 +14,20 @@ export function resolveAvatarUrl(value?: string | null): string | null {
   if (raw.startsWith('/')) return `${ASTRACODE_ORIGIN}${raw}`
   return `${ASTRACODE_ORIGIN}/${raw}`
 }
+
+export function resolveAvatarImageUrl(value?: string | null, size = 64): string | null {
+  const resolved = resolveAvatarUrl(value)
+  if (!resolved) return null
+
+  try {
+    const url = new URL(resolved)
+    if (/\.svg$/i.test(url.pathname)) return resolved
+    if (!url.searchParams.has('w')) url.searchParams.set('w', String(size))
+    if (!url.searchParams.has('h')) url.searchParams.set('h', String(size))
+    if (!url.searchParams.has('fit')) url.searchParams.set('fit', 'cover')
+    if (!url.searchParams.has('q')) url.searchParams.set('q', '75')
+    return url.toString()
+  } catch {
+    return resolved
+  }
+}

@@ -1,8 +1,7 @@
-﻿import { useEffect, useState } from 'react'
-import { useSessionStore } from '../store/useSessionStore'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import * as api from '../api/messaging'
-import { resolveAvatarUrl } from '../utils/avatar'
+import { resolveAvatarImageUrl, resolveAvatarUrl } from '../utils/avatar'
 
 type Friend = {
   id: number
@@ -80,7 +79,6 @@ function normalizeStatus(value: unknown): FriendStatus {
 }
 
 export default function FriendsPanel() {
-  const cookie = useSessionStore(s => s.cookie)
   const activeWorkspaceId = useAppStore(s => s.activeWorkspaceId)
   const setActiveThread = useAppStore(s => s.setActiveThread)
 
@@ -107,7 +105,7 @@ export default function FriendsPanel() {
   async function loadFriends() {
     if (activeWorkspaceId == null) return
     try {
-      const data = await api.listFriends(cookie, activeWorkspaceId) as any
+      const data = await api.listFriends(activeWorkspaceId) as any
       const raw = asArray(data, ['items', 'friends'])
       setFriends(raw.map((f: any) => ({
         id: firstNumber(f.userId, f.user?.id, f.id) ?? 0,
@@ -125,7 +123,7 @@ export default function FriendsPanel() {
   async function loadRequests() {
     if (activeWorkspaceId == null) return
     try {
-      const data = await api.listFriendRequests(cookie, activeWorkspaceId, 'incoming') as any
+      const data = await api.listFriendRequests(activeWorkspaceId, 'incoming') as any
       const raw = asArray(data, ['items', 'requests'])
       setRequests(raw.map((r: any) => ({
         id: firstNumber(r.id, r.requestId, r.friendRequestId, r.request?.id) ?? 0,
@@ -188,7 +186,7 @@ export default function FriendsPanel() {
 
   async function loadUsers(query: string) {
     if (activeWorkspaceId == null) return
-    const data = await api.listDmUsers(cookie, activeWorkspaceId, query) as any
+    const data = await api.listDmUsers(activeWorkspaceId, query) as any
     const raw = asArray(data, ['items', 'users'])
     setSearchResults(raw.map((u: any) => ({
       id: firstNumber(u.user?.id, u.id, u.userId) ?? 0,
@@ -226,7 +224,7 @@ export default function FriendsPanel() {
     setActionError('')
     setActionInfo('')
     try {
-      await api.addMemberByEmail(cookie, activeWorkspaceId, email, 'member')
+      await api.addMemberByEmail(activeWorkspaceId, email, 'member')
       setActionInfo(`Membre ajoute: ${email}`)
       setInviteEmail('')
       await handleSearch(searchQuery)
@@ -247,7 +245,7 @@ export default function FriendsPanel() {
     setActionError('')
     setActionInfo('')
     try {
-      await api.sendFriendRequestByEmail(cookie, activeWorkspaceId, email)
+      await api.sendFriendRequestByEmail(activeWorkspaceId, email)
       setActionInfo(`Demande d ami envoyee: ${email}`)
       setRequestEmail('')
       await loadRequests()
@@ -264,8 +262,8 @@ export default function FriendsPanel() {
     setActionError('')
     setActionInfo('')
     try {
-      if (user.email) await api.sendFriendRequestByEmail(cookie, activeWorkspaceId, user.email)
-      else await api.sendFriendRequest(cookie, activeWorkspaceId, user.id)
+      if (user.email) await api.sendFriendRequestByEmail(activeWorkspaceId, user.email)
+      else await api.sendFriendRequest(activeWorkspaceId, user.id)
       await loadRequests()
       await handleSearch(searchQuery)
     } catch (err) {
@@ -278,7 +276,7 @@ export default function FriendsPanel() {
     setActionError('')
     setActionInfo('')
     try {
-      await api.respondFriendRequest(cookie, activeWorkspaceId, requestId, action)
+      await api.respondFriendRequest(activeWorkspaceId, requestId, action)
       await loadRequests()
       await loadFriends()
       await handleSearch(searchQuery)
@@ -294,7 +292,7 @@ export default function FriendsPanel() {
     try {
       let dmId = firstNumber(existingDmId)
       if (!dmId) {
-        const data = await api.openDm(cookie, activeWorkspaceId, userId) as any
+        const data = await api.openDm(activeWorkspaceId, userId) as any
         dmId = firstNumber(data?.dmId, data?.id, data?.dm?.id)
       }
       if (dmId) {
@@ -503,14 +501,16 @@ export default function FriendsPanel() {
 }
 
 function Avatar({ username, avatar }: { username: string; avatar?: string | null }) {
+  const imageUrl = resolveAvatarImageUrl(avatar, 64)
   return (
     <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-white/10 text-zinc-400 text-xs font-semibold">
-      {avatar
-        ? <img src={avatar} alt={username} className="h-full w-full object-cover" />
+      {imageUrl
+        ? <img src={imageUrl} alt={username} loading="lazy" decoding="async" className="h-full w-full object-cover" />
         : username.slice(0, 2).toUpperCase()
       }
     </div>
   )
 }
+
 
 

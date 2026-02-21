@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSessionStore } from '../store/useSessionStore'
 import { useAppStore } from '../store/useAppStore'
 import { useWorkspace } from '../hooks/useWorkspace'
@@ -15,10 +15,13 @@ export default function AppPage() {
   const [sidebarWidth, setSidebarWidth] = useState(360)
   const [isResizingSidebar, setIsResizingSidebar] = useState(false)
   const centerRef = useRef<HTMLElement | null>(null)
+  const sidebarPaneRef = useRef<HTMLDivElement | null>(null)
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
+  const pendingWidthRef = useRef<number | null>(null)
+  const rafRef = useRef<number | null>(null)
   const scopeLoadedForRef = useRef<number | null>(null)
 
-  const cookie = useSessionStore(s => s.cookie)
+  const accessToken = useSessionStore(s => s.accessToken)
   const clearSession = useSessionStore(s => s.clearSession)
   const activeWorkspaceId = useAppStore(s => s.activeWorkspaceId)
   const activeThread = useAppStore(s => s.activeThread)
@@ -29,9 +32,9 @@ export default function AppPage() {
 
   // Init WS
   useEffect(() => {
-    connectWebSocket(cookie)
+    connectWebSocket(accessToken)
     return () => disconnect(true)
-  }, [cookie])
+  }, [accessToken])
 
   // Subscribe thread when it changes
   useEffect(() => {
@@ -89,24 +92,25 @@ export default function AppPage() {
       })
   }, [activeWorkspaceId, view])
 
-  function handleLogout() {
+  const handleLogout = useCallback(() => {
     clearSession()
     disconnect(true)
-  }
+  }, [clearSession])
 
-  function clampSidebarWidth(nextWidth: number) {
+  const clampSidebarWidth = useCallback((nextWidth: number) => {
     const sectionWidth = centerRef.current?.clientWidth ?? 1000
     const isWideViewport = typeof window !== 'undefined' ? window.innerWidth >= 1280 : true
     const minWidth = 220
     const maxWidth = Math.max(320, sectionWidth - (isWideViewport ? 380 : 180))
     return Math.max(minWidth, Math.min(maxWidth, nextWidth))
-  }
+  }, [])
 
-  function handleResizeStart(e: React.MouseEvent<HTMLElement>) {
+  const handleResizeStart = useCallback((e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault()
-    resizeRef.current = { startX: e.clientX, startWidth: sidebarWidth }
+    const startWidth = sidebarPaneRef.current?.getBoundingClientRect().width ?? sidebarWidth
+    resizeRef.current = { startX: e.clientX, startWidth }
     setIsResizingSidebar(true)
-  }
+  }, [sidebarWidth])
 
   useEffect(() => {
     if (!isResizingSidebar) return
@@ -120,10 +124,28 @@ export default function AppPage() {
       const state = resizeRef.current
       if (!state) return
       const nextWidth = state.startWidth + (e.clientX - state.startX)
-      setSidebarWidth(clampSidebarWidth(nextWidth))
+      pendingWidthRef.current = clampSidebarWidth(nextWidth)
+      if (rafRef.current != null) return
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = null
+        const node = sidebarPaneRef.current
+        const pending = pendingWidthRef.current
+        if (!node || pending == null) return
+        const widthValue = `${pending}px`
+        if (node.style.width !== widthValue) node.style.width = widthValue
+      })
     }
 
     const handleMouseUp = () => {
+      if (rafRef.current != null) {
+        window.cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+      const pending = pendingWidthRef.current
+      if (pending != null) {
+        setSidebarWidth(prev => (prev === pending ? prev : pending))
+        pendingWidthRef.current = null
+      }
       resizeRef.current = null
       setIsResizingSidebar(false)
     }
@@ -134,10 +156,23 @@ export default function AppPage() {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
+      if (rafRef.current != null) {
+        window.cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
       document.body.style.cursor = prevCursor
       document.body.style.userSelect = prevUserSelect
     }
-  }, [isResizingSidebar])
+  }, [isResizingSidebar, clampSidebarWidth])
+
+  const handleWorkspaceSelect = useCallback((id: number) => {
+    setActiveWorkspace(id)
+    setView('workspace')
+  }, [setActiveWorkspace])
+
+  const handleFriendsClick = useCallback(() => {
+    setView('friends')
+  }, [])
 
   return (
     <div className="h-screen bg-[#131413] text-zinc-100 flex flex-col overflow-hidden">
@@ -154,12 +189,9 @@ export default function AppPage() {
 
         {/* Rail workspaces */}
         <WorkspaceRail
-          onWorkspaceSelect={async (id) => {
-            setActiveWorkspace(id)
-            setView('workspace')
-          }}
+          onWorkspaceSelect={handleWorkspaceSelect}
           onLogout={handleLogout}
-          onFriendsClick={() => setView('friends')}
+          onFriendsClick={handleFriendsClick}
           friendsActive={view === 'friends'}
         />
 
@@ -189,7 +221,9 @@ export default function AppPage() {
             </>
           ) : (
             <>
-              <Sidebar onLogout={handleLogout} width={sidebarWidth} />
+              <div ref={sidebarPaneRef} style={{ width: `${sidebarWidth}px` }} className="shrink-0">
+                <Sidebar onLogout={handleLogout} />
+              </div>
 
               <div
                 role="separator"

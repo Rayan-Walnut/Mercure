@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useSessionStore } from '../store/useSessionStore'
 import { useAppStore } from '../store/useAppStore'
 import * as api from '../api/messaging'
 
@@ -9,7 +8,6 @@ type Props = {
 }
 
 export default function CreateWorkspaceModal({ onClose, onCreated }: Props) {
-  const cookie = useSessionStore(s => s.cookie)
   const setWorkspaces = useAppStore(s => s.setWorkspaces)
   const [name, setName] = useState('')
   const [iconFile, setIconFile] = useState<File | null>(null)
@@ -24,14 +22,14 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: Props) {
     setLoading(true)
     setError('')
     try {
-      const data = await api.createWorkspace(cookie, name.trim()) as any
+      const data = await api.createWorkspace(name.trim()) as any
       const workspaceId = data?.workspaceId ?? data?.id ?? data?.workspace?.id
 
       if (iconFile && workspaceId) {
-        await api.uploadWorkspaceIcon(cookie, workspaceId, iconFile)
+        await api.uploadWorkspaceIcon(workspaceId, iconFile)
       }
 
-      const listData = await api.listWorkspaces(cookie) as any
+      const listData = await api.listWorkspaces() as any
       const raw = listData?.items ?? listData?.workspaces ?? []
       setWorkspaces(raw.map((entry: any) => {
         const w = entry.workspace ?? entry

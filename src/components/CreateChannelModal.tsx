@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useSessionStore } from '../store/useSessionStore'
 import * as api from '../api/messaging'
 
 type Props = {
@@ -10,7 +9,6 @@ type Props = {
 }
 
 export default function CreateChannelModal({ workspaceId, existingCategories = [], onClose, onCreated }: Props) {
-  const cookie = useSessionStore(s => s.cookie)
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [newCategory, setNewCategory] = useState('')
@@ -29,7 +27,7 @@ export default function CreateChannelModal({ workspaceId, existingCategories = [
     setLoading(true)
     setError('')
     try {
-      const data = await api.createChannel(cookie, workspaceId, nextName, isPrivate, finalCategory || undefined) as any
+      const data = await api.createChannel(workspaceId, nextName, isPrivate, finalCategory || undefined) as any
       const createdChannelId = data?.channelId ?? data?.id ?? data?.channel?.id ?? null
       await onCreated(createdChannelId)
       onClose()

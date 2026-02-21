@@ -5,7 +5,8 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "dev:electron": "concurrently \"vite\" \"wait-on http://localhost:5173 && npm run build:electron && cross-env NODE_ENV=development electron dist-electron/main.js\"",
+    "dev:electron:app": "wait-on http://localhost:5173 && npm run build:electron && cross-env NODE_ENV=development electron dist-electron/main.js",
+    "dev:electron": "concurrently -k --success ELECTRON -n VITE,ELECTRON \"npm:dev\" \"npm:dev:electron:app\"",
     "build:electron": "tsc -p tsconfig.electron.json",
     "electron": "npm run build:electron && npm run dev:electron",
     "build": "vite build && tsc -p tsconfig.electron.json"

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSessionStore } from '../store/useSessionStore'
 import { getAccountInfo } from '../api/auth'
+import { fetchWithAuth } from '../api/client'
 import { resolveAvatarUrl } from '../utils/avatar'
 
 const UPLOAD_BASE = 'https://upload.astracode.dev'
@@ -15,7 +16,8 @@ type NavItem = 'profil' | 'compte'
 export default function ProfileModal({ onClose, onLogout }: Props) {
   const user = useSessionStore(s => s.user)
   const setSession = useSessionStore(s => s.setSession)
-  const cookie = useSessionStore(s => s.cookie)
+  const accessToken = useSessionStore(s => s.accessToken)
+  const refreshToken = useSessionStore(s => s.refreshToken)
 
   const [nav, setNav] = useState<NavItem>('profil')
   const [avatarUrl, setAvatarUrl] = useState(resolveAvatarUrl(user?.avatar) || '')
@@ -38,9 +40,8 @@ export default function ProfileModal({ onClose, onLogout }: Props) {
     setNotice('')
     try {
       const form = new FormData()
-      form.append('cookie', cookie)
       form.append('file', file)
-      const res = await fetch(`${UPLOAD_BASE}/upload/avatar`, { method: 'POST', body: form })
+      const res = await fetchWithAuth(UPLOAD_BASE, '/upload/avatar', { method: 'POST', body: form })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.detail ?? 'Erreur upload')
       const newAvatar = data.avatar_url ?? data.url ?? null
@@ -55,7 +56,7 @@ export default function ProfileModal({ onClose, onLogout }: Props) {
 
   async function refreshSession(newAvatar?: string) {
     try {
-      const info = await getAccountInfo(cookie) as any
+      const info = await getAccountInfo() as any
       const nextAvatar =
         resolveAvatarUrl(info.avatar) ??
         resolveAvatarUrl(info.avatar_url) ??
@@ -63,7 +64,7 @@ export default function ProfileModal({ onClose, onLogout }: Props) {
         resolveAvatarUrl(user?.avatar) ??
         undefined
 
-      setSession(cookie, {
+      setSession(accessToken, refreshToken, {
         email: info.email ?? user?.email,
         nom: info.nom,
         prenom: info.prenom,

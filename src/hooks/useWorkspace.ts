@@ -64,12 +64,11 @@ function normalizeArray(data: any, keys: string[]): any[] {
 }
 
 export function useWorkspace() {
-  const cookie = useSessionStore(s => s.cookie)
   const user = useSessionStore(s => s.user)
   const store = useAppStore()
 
   const loadWorkspaces = useCallback(async () => {
-    const data = await api.listWorkspaces(cookie) as any
+    const data = await api.listWorkspaces() as any
     const raw = data?.items ?? data?.workspaces ?? []
     const workspaces = raw.map((entry: any) => {
       const w = entry.workspace ?? entry
@@ -83,15 +82,15 @@ export function useWorkspace() {
     })
     store.setWorkspaces(workspaces)
     return workspaces
-  }, [cookie])
+  }, [])
 
   const loadWorkspaceScope = useCallback(async (workspaceId: number) => {
     store.setScopeLoading(true)
     try {
       const [membersData, channelsData, dmsData] = await Promise.all([
-        api.listMembers(cookie, workspaceId),
-        api.listChannels(cookie, workspaceId),
-        api.listDms(cookie, workspaceId),
+        api.listMembers(workspaceId),
+        api.listChannels(workspaceId),
+        api.listDms(workspaceId),
       ])
 
       const { members, currentUserId } = normalizeMembers(membersData, user?.email, user?.id)
@@ -104,7 +103,7 @@ export function useWorkspace() {
       let avatarMap: Record<string, string | null> = {}
       if (emailsWithoutAvatar.length > 0) {
         try {
-          const usersInfo = await authApi.usersInfo(cookie, emailsWithoutAvatar) as any[]
+          const usersInfo = await authApi.usersInfo(emailsWithoutAvatar) as any[]
           for (const u of usersInfo) {
             if (u.email) avatarMap[u.email.toLowerCase()] = resolveAvatarUrl(u.avatar) ?? null
           }
@@ -140,9 +139,9 @@ export function useWorkspace() {
 
       if (channels.length === 0) {
         try {
-          await api.createChannel(cookie, workspaceId, 'general')
+          await api.createChannel(workspaceId, 'general')
         } catch { /* ignore */ }
-        const channelsData2 = await api.listChannels(cookie, workspaceId) as any
+        const channelsData2 = await api.listChannels(workspaceId) as any
         const refreshedChannels = mapChannels(channelsData2)
         store.setChannels(refreshedChannels)
         return { channels: refreshedChannels, dms }
@@ -153,13 +152,12 @@ export function useWorkspace() {
     } finally {
       store.setScopeLoading(false)
     }
-  }, [cookie, user])
+  }, [user])
 
   const loadMessages = useCallback(async () => {
     const thread = useAppStore.getState().activeThread
     if (!thread) return
     const data = await api.listMessages(
-      cookie,
       thread.type === 'channel' ? thread.id : undefined,
       thread.type === 'dm' ? thread.id : undefined,
     )
@@ -179,7 +177,7 @@ export function useWorkspace() {
       }
     }).filter(m => m.id > 0)
     store.setMessages(messages)
-  }, [cookie])
+  }, [])
 
   return { loadWorkspaces, loadWorkspaceScope, loadMessages }
 }

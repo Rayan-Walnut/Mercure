@@ -20,13 +20,19 @@ export default function LoginPage() {
 
     try {
       const data = await login(email, password)
-      if (!data.cookie) throw new Error('Pas de cookie dans la réponse.')
+      const accessToken = String(data.access_token ?? data.accessToken ?? '')
+      const refreshToken = String(data.refresh_token ?? data.refreshToken ?? '')
+      if (!accessToken || !refreshToken) throw new Error('Tokens manquants dans la reponse.')
 
       if (remember) localStorage.setItem('mercure.login.email', email)
       else localStorage.removeItem('mercure.login.email')
 
-      const accountInfo = await getAccountInfo(data.cookie) as any
-      setSession(data.cookie, {
+      setSession(accessToken, refreshToken, {
+        email,
+      })
+
+      const accountInfo = await getAccountInfo() as any
+      setSession(accessToken, refreshToken, {
         email: accountInfo.email ?? email,
         nom: accountInfo.nom,
         prenom: accountInfo.prenom,

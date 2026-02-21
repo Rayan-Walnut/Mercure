@@ -2,8 +2,10 @@ import { create } from 'zustand'
 import { resolveAvatarUrl } from '../utils/avatar'
 
 const KEYS = {
-  cookie: 'mercure.session.cookie',
+  accessToken: 'mercure.session.access_token',
+  refreshToken: 'mercure.session.refresh_token',
   user: 'mercure.session.user',
+  legacyCookie: 'mercure.session.cookie',
 }
 
 type SessionUser = {
@@ -17,9 +19,11 @@ type SessionUser = {
 }
 
 type SessionStore = {
-  cookie: string
+  accessToken: string
+  refreshToken: string
   user: SessionUser | null
-  setSession: (cookie: string, user: SessionUser) => void
+  setSession: (accessToken: string, refreshToken: string, user: SessionUser) => void
+  setTokens: (accessToken: string, refreshToken: string) => void
   clearSession: () => void
 }
 
@@ -42,19 +46,29 @@ function loadUserFromStorage(): SessionUser | null {
 }
 
 export const useSessionStore = create<SessionStore>((set) => ({
-  cookie: localStorage.getItem(KEYS.cookie) ?? '',
+  accessToken: localStorage.getItem(KEYS.accessToken) ?? localStorage.getItem(KEYS.legacyCookie) ?? '',
+  refreshToken: localStorage.getItem(KEYS.refreshToken) ?? '',
   user: loadUserFromStorage(),
 
-  setSession: (cookie, user) => {
+  setSession: (accessToken, refreshToken, user) => {
     const normalizedUser = normalizeSessionUser(user) as SessionUser
-    localStorage.setItem(KEYS.cookie, cookie)
+    localStorage.setItem(KEYS.accessToken, accessToken)
+    localStorage.setItem(KEYS.refreshToken, refreshToken)
     localStorage.setItem(KEYS.user, JSON.stringify(normalizedUser))
-    set({ cookie, user: normalizedUser })
+    set({ accessToken, refreshToken, user: normalizedUser })
+  },
+
+  setTokens: (accessToken, refreshToken) => {
+    localStorage.setItem(KEYS.accessToken, accessToken)
+    localStorage.setItem(KEYS.refreshToken, refreshToken)
+    set({ accessToken, refreshToken })
   },
 
   clearSession: () => {
-    localStorage.removeItem(KEYS.cookie)
+    localStorage.removeItem(KEYS.accessToken)
+    localStorage.removeItem(KEYS.refreshToken)
+    localStorage.removeItem(KEYS.legacyCookie)
     localStorage.removeItem(KEYS.user)
-    set({ cookie: '', user: null })
+    set({ accessToken: '', refreshToken: '', user: null })
   },
 }))

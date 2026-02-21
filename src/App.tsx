@@ -3,6 +3,6 @@ import LoginPage from './pages/LoginPage'
 import AppPage from './pages/AppPage'
 
 export default function App() {
-  const cookie = useSessionStore(s => s.cookie)
-  return cookie ? <AppPage /> : <LoginPage />
+  const accessToken = useSessionStore(s => s.accessToken)
+  return accessToken ? <AppPage /> : <LoginPage />
 }

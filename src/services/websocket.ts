@@ -6,9 +6,11 @@ let ws: WebSocket | null = null
 let shouldReconnect = true
 let reconnectTimer: number | null = null
 
-export function connectWebSocket(cookie: string): void {
+export function connectWebSocket(accessToken: string): void {
   disconnect(false)
-  ws = new WebSocket(`${WS_BASE}?cookie=${encodeURIComponent(cookie)}`)
+  if (!accessToken) return
+  const token = encodeURIComponent(accessToken)
+  ws = new WebSocket(`${WS_BASE}?access_token=${token}&token=${token}`)
 
   ws.addEventListener('open', () => {
     subscribeCurrentThread()
@@ -20,7 +22,7 @@ export function connectWebSocket(cookie: string): void {
 
   ws.addEventListener('close', () => {
     if (!shouldReconnect) return
-    reconnectTimer = window.setTimeout(() => connectWebSocket(cookie), 2500)
+    reconnectTimer = window.setTimeout(() => connectWebSocket(accessToken), 2500)
   })
 }
 

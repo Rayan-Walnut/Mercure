@@ -1,13 +1,39 @@
-﻿import { useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { resolveAvatarImageUrl } from '../utils/avatar'
 
-export default function MessageList() {
+function MessageList() {
   const messages = useAppStore(s => s.messages)
   const membersById = useAppStore(s => s.membersById)
+  const activeThread = useAppStore(s => s.activeThread)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const hasScrolledForThreadRef = useRef(false)
+  const prevMessageCountRef = useRef(0)
+  const prevThreadKeyRef = useRef<string | null>(null)
+
+  const threadKey = activeThread ? `${activeThread.type}:${activeThread.id}` : null
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (prevThreadKeyRef.current !== threadKey) {
+      hasScrolledForThreadRef.current = false
+      prevMessageCountRef.current = 0
+      prevThreadKeyRef.current = threadKey
+    }
+  }, [threadKey])
+
+  useEffect(() => {
+    if (!bottomRef.current) return
+    const previousCount = prevMessageCountRef.current
+    const nextCount = messages.length
+    const isSingleNewMessage = hasScrolledForThreadRef.current && nextCount === previousCount + 1
+
+    bottomRef.current.scrollIntoView({
+      behavior: isSingleNewMessage ? 'smooth' : 'auto',
+      block: 'end',
+    })
+
+    hasScrolledForThreadRef.current = true
+    prevMessageCountRef.current = nextCount
   }, [messages])
 
   function formatTime(value?: string) {
@@ -71,7 +97,7 @@ export default function MessageList() {
       {enriched.map(({ msg, isFirstOfDay, isContinuation }) => {
         const member = msg.senderId ? membersById.get(msg.senderId) : undefined
         const author = msg.senderUsername ?? member?.username ?? (msg.senderId ? `User ${msg.senderId}` : 'Inconnu')
-        const avatar = msg.senderAvatar ?? member?.avatar ?? null
+        const avatar = resolveAvatarImageUrl(msg.senderAvatar ?? member?.avatar, 64)
         const initials = author.slice(0, 2).toUpperCase()
         const time = formatTime(msg.createdAt)
 
@@ -102,7 +128,13 @@ export default function MessageList() {
               ) : (
                 <div className="w-9 h-9 shrink-0 mr-3 mt-0.5">
                   {avatar ? (
-                    <img src={avatar} alt={author} className="w-9 h-9 rounded-lg object-cover" />
+                    <img
+                      src={avatar}
+                      alt={author}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-9 h-9 rounded-lg object-cover"
+                    />
                   ) : (
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white select-none"
@@ -125,7 +157,7 @@ export default function MessageList() {
               </div>
 
               <div className="absolute right-4 -top-3.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-zinc-900 border border-zinc-700 rounded-md shadow-lg px-1 py-0.5 z-10">
-                {['🙂', '👍', '✅'].map(emoji => (
+                {['\u{1F642}', '\u{1F44D}', '\u{2705}'].map(emoji => (
                   <button
                     key={emoji}
                     className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-700 text-sm transition-colors"
@@ -149,3 +181,6 @@ export default function MessageList() {
     </div>
   )
 }
+
+export default memo(MessageList)
+

@@ -1,11 +1,9 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { useSessionStore } from '../store/useSessionStore'
 import { useWorkspace } from '../hooks/useWorkspace'
 import * as api from '../api/messaging'
 
-export default function Composer() {
-  const cookie = useSessionStore(s => s.cookie)
+function Composer() {
   const activeThread = useAppStore(s => s.activeThread)
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
@@ -18,7 +16,6 @@ export default function Composer() {
     setSending(true)
     try {
       await api.sendMessage(
-        cookie,
         content.trim(),
         activeThread.type === 'channel' ? activeThread.id : undefined,
         activeThread.type === 'dm' ? activeThread.id : undefined,
@@ -64,3 +61,5 @@ export default function Composer() {
     </div>
   )
 }
+
+export default memo(Composer)

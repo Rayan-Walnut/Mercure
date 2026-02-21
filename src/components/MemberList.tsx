@@ -1,19 +1,18 @@
-import { useEffect, useState, useMemo } from 'react'
+import { memo, useEffect, useState, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { useSessionStore } from '../store/useSessionStore'
 import * as api from '../api/messaging'
-import { resolveAvatarUrl } from '../utils/avatar'
+import { resolveAvatarImageUrl } from '../utils/avatar'
 
 // Structure retournée par /workspaces/members/list
 type WorkspaceMember = {
   userId: number
   workspaceId: number
   role: string
-  user?: {
+  user: {
     id: number
     username: string
     handle?: string | null
-    email: string
+    email?: string
     avatar?: string | null
     createdAt?: string | null
   }
@@ -29,8 +28,8 @@ function Avatar({ user, size = 28, online }: {
   size?: number
   online: boolean
 }) {
-  const avatar = resolveAvatarUrl(user?.avatar)
-  const initials = (user?.username ?? '?')
+  const avatar = resolveAvatarImageUrl(user.avatar, 64)
+  const initials = (user.username ?? '?')
     .split(' ')
     .map(w => w[0])
     .join('')
@@ -38,11 +37,11 @@ function Avatar({ user, size = 28, online }: {
     .toUpperCase()
 
   const hue = useMemo(() => {
-    const str = user?.username ?? 'x'
+    const str = user.username ?? 'x'
     let h = 0
     for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360
     return h
-  }, [user?.username])
+  }, [user.username])
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -50,6 +49,8 @@ function Avatar({ user, size = 28, online }: {
         <img
           src={avatar}
           alt={user.username}
+          loading="lazy"
+          decoding="async"
           className="rounded-full object-cover w-full h-full"
         />
       ) : (
@@ -107,7 +108,7 @@ function MemberRow({ member, online }: { member: WorkspaceMember; online: boolea
           <span className={`text-[13px] leading-5 truncate font-medium transition-colors duration-150
             ${online ? 'text-zinc-100' : 'text-zinc-300'}`}
           >
-            {member.user?.username ?? `User ${member.userId}`}
+            {member.user.username ?? `User ${member.userId}`}
           </span>
 
           {member.role === 'admin' && (
@@ -121,7 +122,7 @@ function MemberRow({ member, online }: { member: WorkspaceMember; online: boolea
           )}
         </div>
 
-        {member.user?.handle && (
+        {member.user.handle && (
           <p className={`text-[11px] truncate leading-4 ${online ? 'text-zinc-400' : 'text-zinc-500'}`}>
             @{member.user.handle}
           </p>
@@ -174,30 +175,44 @@ function Section({ label, members, online, defaultOpen = true }: {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export default function MemberList({ width }: Props) {
+function MemberList({ width }: Props) {
   const activeWorkspaceId = useAppStore(s => s.activeWorkspaceId)
-  const cookie = useSessionStore(s => s.cookie)
+  const membersById = useAppStore(s => s.membersById)
   const onlineUserIds = useAppStore(s => s.onlineUserIds)
   const lastWsEvent = useAppStore(s => s.lastWsEvent)
   const setOnlineUserIds = useAppStore(s => s.setOnlineUserIds)
 
-  const [members, setMembers] = useState<WorkspaceMember[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Charger membres + présence initiale
+  const members = useMemo<WorkspaceMember[]>(() => {
+    const workspaceId = activeWorkspaceId ?? 0
+    return Array.from(membersById.values()).map(member => ({
+      userId: member.id,
+      workspaceId,
+      role: member.role ?? 'member',
+      user: {
+        id: member.id,
+        username: member.username ?? `User ${member.id}`,
+        email: member.email,
+        avatar: member.avatar ?? null,
+      },
+    }))
+  }, [membersById, activeWorkspaceId])
+
+  // Charger presence initiale
   useEffect(() => {
-    if (!activeWorkspaceId) { setMembers([]); return }
+    if (!activeWorkspaceId) {
+      setOnlineUserIds(new Set<number>())
+      return
+    }
+    const workspaceId = activeWorkspaceId
     let cancelled = false
 
     async function load() {
       setLoading(true)
       try {
-        const [membersRes, onlineRes] = await Promise.all([
-          api.listMembers(cookie, activeWorkspaceId!),
-          api.onlineMembers(cookie, activeWorkspaceId!),
-        ])
+        const onlineRes = await api.onlineMembers(workspaceId) as any
         if (cancelled) return
-        setMembers(membersRes.items ?? [])
         setOnlineUserIds(new Set<number>(onlineRes.onlineUserIds ?? []))
       } catch {
         // silencieux
@@ -208,7 +223,7 @@ export default function MemberList({ width }: Props) {
 
     load()
     return () => { cancelled = true }
-  }, [activeWorkspaceId, cookie])
+  }, [activeWorkspaceId, setOnlineUserIds])
 
   // Mettre à jour la présence en temps réel via WS
   useEffect(() => {
@@ -228,7 +243,7 @@ export default function MemberList({ width }: Props) {
   const { online, offline } = useMemo(() => {
     const sortMembers = (a: WorkspaceMember, b: WorkspaceMember) => {
       if (a.role !== b.role) return a.role === 'admin' ? -1 : 1
-      return (a.user?.username ?? '').localeCompare(b.user?.username ?? '')
+      return (a.user.username ?? '').localeCompare(b.user.username ?? '')
     }
 
     const online: WorkspaceMember[] = []
@@ -276,3 +291,5 @@ export default function MemberList({ width }: Props) {
     </aside>
   )
 }
+
+export default memo(MemberList)

@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useSessionStore } from '../store/useSessionStore'
 import CreateWorkspaceModal from './CreateWorkspaceModal'
 import ProfileModal from './ProfileModal'
-import { resolveAvatarUrl } from '../utils/avatar'
+import { resolveAvatarImageUrl, resolveAvatarUrl } from '../utils/avatar'
 
 type Props = {
   onWorkspaceSelect: (id: number) => void
@@ -12,7 +12,7 @@ type Props = {
   onLogout: () => void
 }
 
-export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, friendsActive, onLogout }: Props) {
+function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, friendsActive, onLogout }: Props) {
   const workspaces = useAppStore(s => s.workspaces)
   const activeWorkspaceId = useAppStore(s => s.activeWorkspaceId)
   const setActiveWorkspace = useAppStore(s => s.setActiveWorkspace)
@@ -35,6 +35,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
 
   const initials = displayName.slice(0, 2).toUpperCase()
   const avatarUrl = resolveAvatarUrl(user?.avatar) ?? resolveAvatarUrl(currentMember?.avatar) ?? null
+  const railAvatarUrl = resolveAvatarImageUrl(avatarUrl, 96)
 
   return (
     <>
@@ -62,6 +63,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
         <div className="flex flex-col items-center gap-2 w-full px-2 sm:px-3">
           {workspaces.map(ws => {
             const isActive = ws.id === activeWorkspaceId
+            const workspaceIconUrl = resolveAvatarImageUrl(ws.icon, 96)
             return (
               <button
                 key={ws.id}
@@ -78,8 +80,8 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
                     : 'bg-white/[0.06] text-zinc-300 hover:bg-white/10 hover:text-zinc-100 hover:rounded-[14px]'
                   }`}
                 >
-                  {ws.icon
-                    ? <img src={ws.icon} alt={ws.name} className="h-full w-full object-cover" />
+                  {workspaceIconUrl
+                    ? <img src={workspaceIconUrl} alt={ws.name} decoding="async" className="h-full w-full object-cover" />
                     : <span className="text-[13px]">{ws.name.slice(0, 2).toUpperCase()}</span>
                   }
                 </div>
@@ -96,10 +98,11 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
             title={displayName}
             className="focus:outline-none w-full flex justify-center"
           >
-            {avatarUrl ? (
+            {railAvatarUrl ? (
               <img
-                src={avatarUrl}
+                src={railAvatarUrl}
                 alt={displayName}
+                decoding="async"
                 className="h-9 w-9 rounded-full object-cover border-2 border-white/10 hover:border-indigo-400/50 transition-all duration-200"
               />
             ) : (
@@ -140,3 +143,5 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
     </>
   )
 }
+
+export default memo(WorkspaceRail)

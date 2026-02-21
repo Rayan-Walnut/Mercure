@@ -9,7 +9,6 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAppStore } from '../store/useAppStore'
-import { useSessionStore } from '../store/useSessionStore'
 import { useWorkspace } from '../hooks/useWorkspace'
 import * as api from '../api/messaging'
 import CreateChannelModal from './CreateChannelModal'
@@ -77,7 +76,6 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState(ch.name)
   const inputRef = useRef<HTMLInputElement>(null)
-  const cookie = useSessionStore(s => s.cookie)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `ch-${ch.id}`,
@@ -94,7 +92,7 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
     const trimmed = editValue.trim()
     if (!trimmed || trimmed === ch.name) { setEditing(false); return }
     try {
-      await (api as any).renameChannel(cookie, ch.id, trimmed)
+      await (api as any).renameChannel(ch.id, trimmed)
       onRenamed(trimmed)
     } catch {
       setEditValue(ch.name)
@@ -186,13 +184,13 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
 
 // ─── Modal suppression ────────────────────────────────────────────────────────
 
-function DeleteModal({ ch, cookie, onDone, onClose }: {
-  ch: Channel; cookie: string; onDone: () => void; onClose: () => void
+function DeleteModal({ ch, onDone, onClose }: {
+  ch: Channel; onDone: () => void; onClose: () => void
 }) {
   const [loading, setLoading] = useState(false)
   async function handleDelete() {
     setLoading(true)
-    try { await (api as any).deleteChannel(cookie, ch.id); onDone() } catch {}
+    try { await (api as any).deleteChannel(ch.id); onDone() } catch {}
     setLoading(false)
     onClose()
   }
@@ -234,7 +232,6 @@ export default function Sidebar({ onLogout, width }: Props) {
   const activeThread = useAppStore(s => s.activeThread)
   const scopeLoading = useAppStore(s => s.scopeLoading)
   const setActiveThread = useAppStore(s => s.setActiveThread)
-  const cookie = useSessionStore(s => s.cookie)
   const { loadWorkspaceScope } = useWorkspace()
 
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -317,7 +314,7 @@ export default function Sidebar({ onLogout, width }: Props) {
     // Persister
     try {
       const moved = updatedGroup.find(c => c.id === draggedId)!
-      await api.updateChannel(cookie, draggedId, targetCategory ?? '', moved.position)
+      await api.updateChannel(draggedId, targetCategory ?? '', moved.position)
     } catch {
       if (activeWorkspaceId) loadWorkspaceScope(activeWorkspaceId)
     }
@@ -427,7 +424,6 @@ export default function Sidebar({ onLogout, width }: Props) {
       {deleting && (
         <DeleteModal
           ch={deleting}
-          cookie={cookie}
           onDone={() => {
             const remaining = channels.filter(c => c.id !== deleting.id)
             setChannels(remaining)
