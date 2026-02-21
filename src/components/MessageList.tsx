@@ -26,16 +26,34 @@ export default function MessageList() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+    <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 ">
       {messages.map(msg => {
-        const author = msg.senderId ? (membersById.get(msg.senderId)?.username ?? `User ${msg.senderId}`) : 'Inconnu'
+        const member = msg.senderId ? membersById.get(msg.senderId) : undefined
+        const author = msg.senderUsername ?? member?.username ?? (msg.senderId ? `User ${msg.senderId}` : 'Inconnu')
+        const avatar = msg.senderAvatar ?? member?.avatar ?? null
+        const initials = author.slice(0, 2).toUpperCase()
         return (
-          <div key={msg.id}>
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-zinc-200">{author}</span>
-              <span className="text-[11px] text-zinc-600">{formatTime(msg.createdAt)}</span>
+          <div key={msg.id} className="hover:bg-zinc-800/50 rounded-md px-3 py-2">
+            <div className="flex items-start gap-3">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={author}
+                  className="mt-0.5 h-9 w-9 rounded-full object-cover border border-white/10 shrink-0"
+                />
+              ) : (
+                <div className="mt-0.5 h-9 w-9 rounded-full bg-sky-500/20 text-sky-300 flex items-center justify-center text-xs font-semibold shrink-0">
+                  {initials}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-medium text-zinc-200">{author}</span>
+                  <span className="text-[11px] text-zinc-600">{formatTime(msg.createdAt)}</span>
+                </div>
+                <p className="mt-0.5 text-sm text-zinc-300 whitespace-pre-wrap">{msg.content}</p>
+              </div>
             </div>
-            <p className="mt-0.5 text-sm text-zinc-300 whitespace-pre-wrap">{msg.content}</p>
           </div>
         )
       })}

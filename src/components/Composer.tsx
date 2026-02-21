@@ -40,8 +40,8 @@ export default function Composer() {
   }
 
   return (
-    <div className="px-4 py-3 border-t border-white/[0.06]">
-      <form onSubmit={handleSubmit} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5">
+    <div className="px-2 py-3 border-t border-white/[0.06] ">
+      <form onSubmit={handleSubmit} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 focus-within:ring-1 focus-within:ring-white/10 focus-within:ring-inset">
         <input
           value={content}
           onChange={e => setContent(e.target.value)}

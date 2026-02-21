@@ -7,12 +7,15 @@ import WorkspaceRail from '../components/WorkspaceRail'
 import Sidebar from '../components/Sidebar'
 import MessageList from '../components/MessageList'
 import Composer from '../components/Composer'
+import FriendsPanel from '../components/FriendsPanel'
 
 export default function AppPage() {
-  const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [view, setView] = useState<'workspace' | 'friends'>('workspace')
+  const [sidebarWidth, setSidebarWidth] = useState(460)
   const [isResizingSidebar, setIsResizingSidebar] = useState(false)
   const centerRef = useRef<HTMLElement | null>(null)
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
+  const scopeLoadedForRef = useRef<number | null>(null)
 
   const cookie = useSessionStore(s => s.cookie)
   const clearSession = useSessionStore(s => s.clearSession)
@@ -29,37 +32,61 @@ export default function AppPage() {
     return () => disconnect(true)
   }, [cookie])
 
-  // Subscribe thread quand il change
+  // Subscribe thread when it changes
   useEffect(() => {
     if (!activeThread) return
     subscribeCurrentThread()
     loadMessages()
   }, [activeThread?.type, activeThread?.id])
 
-  // Charger les workspaces au démarrage
   useEffect(() => {
     loadWorkspaces()
+      .then(workspaces => {
+        if (workspaces.length > 0 && !activeWorkspaceId) {
+          setActiveWorkspace(workspaces[0].id)
+        }
+      })
+      .catch(err => console.error('loadWorkspaces error:', err))
   }, [])
 
-  // Charger le scope quand le workspace actif change
+  // Load scope when active workspace changes
   useEffect(() => {
     if (!activeWorkspaceId) return
-    loadWorkspaceScope(activeWorkspaceId).then(({ channels, dms }) => {
-      const thread = useAppStore.getState().activeThread
-      const stillValid =
-        thread?.type === 'channel'
-          ? channels.some(c => c.id === thread.id)
-          : thread?.type === 'dm'
-            ? dms.some(d => d.id === thread.id)
-            : false
+    if (scopeLoadedForRef.current === activeWorkspaceId) return
+    scopeLoadedForRef.current = activeWorkspaceId
 
-      if (!stillValid) {
-        if (channels[0]) setActiveThread({ type: 'channel', id: channels[0].id })
-        else if (dms[0]) setActiveThread({ type: 'dm', id: dms[0].id })
-        else setActiveThread(null)
-      }
-    })
-  }, [activeWorkspaceId])
+    loadWorkspaceScope(activeWorkspaceId)
+      .then(({ channels, dms }) => {
+        const thread = useAppStore.getState().activeThread
+        if (thread?.type === 'dm' && view === 'friends') return
+
+        if (!thread) {
+          if (channels[0]) setActiveThread({ type: 'channel', id: channels[0].id })
+          else if (dms[0]) setActiveThread({ type: 'dm', id: dms[0].id })
+          else setActiveThread(null)
+          return
+        }
+
+        const stillValid =
+          thread?.type === 'channel'
+            ? channels.some(c => c.id === thread.id)
+            : thread?.type === 'dm'
+              ? dms.some(d => d.id === thread.id)
+              : false
+
+        if (!stillValid) {
+          if (channels[0]) setActiveThread({ type: 'channel', id: channels[0].id })
+          else if (dms[0]) setActiveThread({ type: 'dm', id: dms[0].id })
+          else setActiveThread(null)
+        }
+      })
+      .catch(err => {
+        if (scopeLoadedForRef.current === activeWorkspaceId) {
+          scopeLoadedForRef.current = null
+        }
+        console.error('loadWorkspaceScope error:', err)
+      })
+  }, [activeWorkspaceId, view])
 
   function handleLogout() {
     clearSession()
@@ -124,53 +151,78 @@ export default function AppPage() {
       <main className="flex flex-1 min-h-0 overflow-hidden">
 
         {/* Rail workspaces */}
-        <WorkspaceRail onWorkspaceSelect={async (id) => {
-          setActiveWorkspace(id)
-        }} />
+        <WorkspaceRail
+          onWorkspaceSelect={async (id) => {
+            setActiveWorkspace(id)
+            setView('workspace')
+          }}
+          onLogout={handleLogout}
+          onFriendsClick={() => setView('friends')}
+          friendsActive={view === 'friends'}
+        />
 
-        {/* Zone centrale */}
+        {/* Central zone */}
         <section ref={centerRef} className="flex flex-1 min-w-0 rounded-tl-2xl border border-zinc-700/40 bg-[#1a1b1a] overflow-hidden">
-
-          {/* Sidebar */}
-          <Sidebar onLogout={handleLogout} width={sidebarWidth} />
-
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Redimensionner la sidebar"
-            onMouseDown={handleResizeStart}
-            className={`group relative w-1.5 shrink-0 cursor-col-resize bg-transparent transition-colors ${
-              isResizingSidebar ? 'bg-indigo-400/15' : 'hover:bg-indigo-400/10'
-            }`}
-          >
-            <span
-              className={`pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-colors ${
-                isResizingSidebar ? 'bg-indigo-400/70' : 'bg-white/[0.08] group-hover:bg-indigo-300/60'
-              }`}
-            />
-          </div>
-
-          {/* Thread */}
-          <div className="flex flex-col flex-1 min-w-0">
-            {activeThread ? (
-              <>
-                <MessageList />
-                <Composer />
-              </>
-            ) : (
-              <div className="flex flex-1 items-center justify-center opacity-20">
-                <div className="flex flex-col items-center gap-3">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                  </svg>
-                  <p className="text-sm text-zinc-400">Sélectionne une discussion</p>
-                </div>
+          {view === 'friends' ? (
+            <>
+              <FriendsPanel />
+              <div className="w-px shrink-0 bg-white/[0.06]" />
+              <div className="flex flex-col flex-1 min-w-0">
+                {activeThread?.type === 'dm' ? (
+                  <>
+                    <MessageList />
+                    <Composer />
+                  </>
+                ) : (
+                  <div className="flex flex-1 items-center justify-center opacity-20">
+                    <div className="flex flex-col items-center gap-3">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                      </svg>
+                      <p className="text-sm text-zinc-400">Selectionne un ami pour discuter</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              <Sidebar onLogout={handleLogout} width={sidebarWidth} />
 
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Redimensionner la sidebar"
+                onMouseDown={handleResizeStart}
+                className="group relative w-4 shrink-0 cursor-col-resize"
+              >
+                <span
+                  className={`pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-colors ${isResizingSidebar ? 'bg-indigo-400/70' : 'bg-white/[0.04] group-hover:bg-indigo-300/60'}`}
+                />
+              </div>
+
+              <div className="flex flex-col flex-1 min-w-0">
+                {activeThread ? (
+                  <>
+                    <MessageList />
+                    <Composer />
+                  </>
+                ) : (
+                  <div className="flex flex-1 items-center justify-center opacity-20">
+                    <div className="flex flex-col items-center gap-3">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                      </svg>
+                      <p className="text-sm text-zinc-400">Selectionne une discussion</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </section>
       </main>
     </div>
   )
 }
+

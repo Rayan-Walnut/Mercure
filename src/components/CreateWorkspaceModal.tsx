@@ -71,7 +71,7 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17181a] shadow-2xl"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17181a]"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">

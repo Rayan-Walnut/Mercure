@@ -12,6 +12,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/profile-api': {
+        target: 'https://astracode.dev',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/profile-api/, '/api'),
+      },
     },
   },
 })

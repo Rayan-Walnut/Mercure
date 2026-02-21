@@ -2,16 +2,41 @@ import { useCallback } from 'react'
 import { useSessionStore } from '../store/useSessionStore'
 import { useAppStore } from '../store/useAppStore'
 import * as api from '../api/messaging'
+import * as authApi from '../api/auth'
+import { resolveAvatarUrl } from '../utils/avatar'
+
+function pickString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value !== 'string') continue
+    const next = value.trim()
+    if (next) return next
+  }
+  return undefined
+}
+
+function isEmail(value?: string): value is string {
+  if (!value) return false
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+function isResolvableAvatarValue(value?: string): value is string {
+  if (!value) return false
+  const raw = value.trim()
+  if (!raw) return false
+  return /^https?:\/\//i.test(raw) || raw.startsWith('//') || raw.startsWith('/')
+}
 
 function normalizeMembers(data: any, userEmail?: string, userId?: number) {
   const raw: any[] = data?.members ?? data?.items ?? data?.data ?? []
   const members = raw.map((m: any) => {
     const user = m.user ?? m
+    const emailRaw = pickString(m.email, user.email)
+    const avatarRaw = pickString(m.avatar, m.avatar_url, user.avatar, user.avatar_url)
     return {
       id: m.userId ?? m.id ?? user.id,
-      username: m.username ?? user.username ?? user.email ?? `User ${m.id}`,
-      email: m.email ?? user.email,
-      avatar: m.avatar ?? user.avatar ?? null,
+      username: m.username ?? user.username ?? (isEmail(emailRaw) ? emailRaw : undefined) ?? `User ${m.id}`,
+      email: isEmail(emailRaw) ? emailRaw : undefined,
+      avatar: isResolvableAvatarValue(avatarRaw) ? resolveAvatarUrl(avatarRaw) : null,
       role: m.role,
     }
   }).filter((m: any) => m.id)
@@ -43,7 +68,6 @@ export function useWorkspace() {
 
   const loadWorkspaces = useCallback(async () => {
     const data = await api.listWorkspaces(cookie) as any
-
     const raw = data?.items ?? data?.workspaces ?? []
     const workspaces = raw.map((entry: any) => {
       const w = entry.workspace ?? entry
@@ -55,11 +79,7 @@ export function useWorkspace() {
         createdAt: w.createdAt,
       }
     })
-
     store.setWorkspaces(workspaces)
-    if (!store.activeWorkspaceId && workspaces.length > 0) {
-      store.setActiveWorkspace(workspaces[0].id)
-    }
     return workspaces
   }, [cookie])
 
@@ -73,13 +93,39 @@ export function useWorkspace() {
       ])
 
       const { members, currentUserId } = normalizeMembers(membersData, user?.email, user?.id)
-      store.setMembers(members, currentUserId)
+
+      // Une seule requête batch pour tous les avatars manquants
+      const emailsWithoutAvatar = members
+        .filter(m => !m.avatar && m.email)
+        .map(m => m.email as string)
+
+      let avatarMap: Record<string, string | null> = {}
+      if (emailsWithoutAvatar.length > 0) {
+        try {
+          const usersInfo = await authApi.usersInfo(cookie, emailsWithoutAvatar) as any[]
+          for (const u of usersInfo) {
+            if (u.email) avatarMap[u.email.toLowerCase()] = u.avatar ?? null
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      const enrichedMembers = members.map(m => {
+        if (m.avatar) return m
+        if (m.id === currentUserId && user?.avatar) return { ...m, avatar: user.avatar }
+        const mapped = m.email ? avatarMap[m.email.toLowerCase()] : null
+        return { ...m, avatar: mapped ?? null }
+      })
+
+      store.setMembers(enrichedMembers, currentUserId)
 
       const mapChannels = (data: any) => normalizeArray(data, ['channels', 'items']).map((c: any) => ({
         id: c.id,
         workspaceId: c.workspaceId,
         name: c.name ?? `canal-${c.id}`,
         isPrivate: c.isPrivate ?? false,
+        category: pickString(c.category) ?? null,
       }))
       const channels = mapChannels(channelsData)
 
@@ -94,7 +140,6 @@ export function useWorkspace() {
         try {
           await api.createChannel(cookie, workspaceId, 'general')
         } catch { /* ignore */ }
-
         const channelsData2 = await api.listChannels(cookie, workspaceId) as any
         const refreshedChannels = mapChannels(channelsData2)
         store.setChannels(refreshedChannels)
@@ -116,14 +161,19 @@ export function useWorkspace() {
       thread.type === 'channel' ? thread.id : undefined,
       thread.type === 'dm' ? thread.id : undefined,
     )
-    const messages = normalizeArray(data, ['messages', 'items']).map((m: any) => ({
-      id: m.id,
-      channelId: m.channelId ?? null,
-      dmId: m.dmId ?? null,
-      senderId: m.senderId ?? null,
-      content: String(m.content ?? ''),
-      createdAt: m.createdAt,
-    }))
+    const messages = normalizeArray(data, ['messages', 'items']).map((m: any) => {
+      const member = useAppStore.getState().membersById.get(m.senderId)
+      return {
+        id: m.id,
+        channelId: m.channelId ?? null,
+        dmId: m.dmId ?? null,
+        senderId: m.senderId ?? null,
+        senderAvatar: member?.avatar ?? (isResolvableAvatarValue(m.sender?.avatar) ? m.sender.avatar : null),
+        senderUsername: member?.username ?? m.sender?.username ?? null,
+        content: String(m.content ?? ''),
+        createdAt: m.createdAt,
+      }
+    })
     store.setMessages(messages)
   }, [cookie])
 

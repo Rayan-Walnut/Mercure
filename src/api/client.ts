@@ -2,6 +2,7 @@ const IS_DEV = import.meta.env.DEV
 
 export const API_BASE = IS_DEV ? '/api' : 'https://api.astracode.dev'
 export const MESSAGING_BASE = `${API_BASE}/accounts/messaging`
+export const PROFILE_BASE = IS_DEV ? '/profile-api' : 'https://astracode.dev/api'
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {

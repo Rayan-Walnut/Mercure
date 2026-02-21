@@ -11,6 +11,8 @@ type SessionUser = {
   prenom?: string
   email?: string
   username?: string
+  avatar?: string
+  handle?: string
 }
 
 type SessionStore = {

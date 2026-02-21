@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { login } from '../api/auth'
+import { login, getAccountInfo } from '../api/auth'
 import { useSessionStore } from '../store/useSessionStore'
 
 export default function LoginPage() {
@@ -24,7 +24,15 @@ export default function LoginPage() {
       if (remember) localStorage.setItem('mercure.login.email', email)
       else localStorage.removeItem('mercure.login.email')
 
-      setSession(data.cookie, data.user_info ?? { email })
+      const accountInfo = await getAccountInfo(data.cookie) as any
+      setSession(data.cookie, {
+        email: accountInfo.email ?? email,
+        nom: accountInfo.nom,
+        prenom: accountInfo.prenom,
+        avatar: accountInfo.avatar,
+        handle: accountInfo.handle,
+        username: accountInfo.handle,
+      })
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Connexion impossible.')
     } finally {

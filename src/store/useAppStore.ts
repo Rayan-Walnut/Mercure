@@ -7,12 +7,13 @@ export type Workspace = {
   ownerId?: number
   createdAt?: string
 }
-
 export type Channel = {
   id: number
   workspaceId: number
   name: string
   isPrivate?: boolean
+  category?: string | null
+  position?: number
 }
 
 export type DM = {
@@ -34,6 +35,8 @@ export type Message = {
   channelId?: number | null
   dmId?: number | null
   senderId?: number | null
+  senderAvatar?: string | null
+  senderUsername?: string | null
   content: string
   createdAt?: string
 }

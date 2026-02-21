@@ -9,6 +9,8 @@ type User = {
   prenom?: string
   email?: string
   username?: string
+  avatar?: string
+  handle?: string
 }
 
 type LoginResponse = { cookie: string; user_info?: User }
@@ -18,6 +20,12 @@ export const login = (email: string, password: string) =>
 
 export const getAccountInfo = (cookie: string) =>
   p<User>('/account-info', { cookie })
+
+export const usersInfo = (cookie: string, emails: string[]) =>
+  p<{ email: string; nom?: string; prenom?: string; avatar?: string | null }[]>(
+    '/users-info',
+    { cookie, emails },
+  )
 
 export const checkSession = (cookie: string) =>
   p<{ valid: boolean }>('/check', { cookie })
