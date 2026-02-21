@@ -45,6 +45,8 @@ export type ActiveThread =
   | { type: 'channel'; id: number }
   | { type: 'dm'; id: number }
 
+export type WsEvent = Record<string, unknown>
+
 type AppStore = {
   workspaces: Workspace[]
   channels: Channel[]
@@ -56,6 +58,10 @@ type AppStore = {
   currentUserId: number | null
   scopeLoading: boolean
 
+  // ── Présence ──────────────────────────────────────────────────────────────
+  onlineUserIds: Set<number>
+  lastWsEvent: WsEvent | null
+
   setWorkspaces: (ws: Workspace[]) => void
   setChannels: (ch: Channel[]) => void
   setDms: (dms: DM[]) => void
@@ -65,6 +71,10 @@ type AppStore = {
   setActiveWorkspace: (id: number) => void
   setActiveThread: (thread: ActiveThread | null) => void
   setScopeLoading: (v: boolean) => void
+
+  // ── Présence ──────────────────────────────────────────────────────────────
+  setOnlineUserIds: (ids: Set<number> | ((prev: Set<number>) => Set<number>)) => void
+  setLastWsEvent: (event: WsEvent) => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -77,6 +87,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   activeThread: null,
   currentUserId: null,
   scopeLoading: false,
+
+  // ── Présence ──────────────────────────────────────────────────────────────
+  onlineUserIds: new Set<number>(),
+  lastWsEvent: null,
 
   setWorkspaces: (workspaces) => set({ workspaces }),
   setChannels: (channels) => set({ channels }),
@@ -94,4 +108,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setActiveWorkspace: (id) => set({ activeWorkspaceId: id }),
   setActiveThread: (thread) => set({ activeThread: thread }),
   setScopeLoading: (scopeLoading) => set({ scopeLoading }),
+
+  // ── Présence ──────────────────────────────────────────────────────────────
+  setOnlineUserIds: (ids) =>
+    set((state) => ({
+      onlineUserIds: typeof ids === 'function' ? ids(state.onlineUserIds) : ids,
+    })),
+  setLastWsEvent: (event) => set({ lastWsEvent: event }),
 }))

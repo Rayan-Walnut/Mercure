@@ -8,6 +8,7 @@ import Sidebar from '../components/Sidebar'
 import MessageList from '../components/MessageList'
 import Composer from '../components/Composer'
 import FriendsPanel from '../components/FriendsPanel'
+import MemberList from '../components/MemberList'
 
 export default function AppPage() {
   const [view, setView] = useState<'workspace' | 'friends'>('workspace')
@@ -218,6 +219,9 @@ export default function AppPage() {
                   </div>
                 )}
               </div>
+
+              {/* ── Liste des membres ── */}
+              <MemberList width={200} />
             </>
           )}
         </section>
@@ -225,4 +229,3 @@ export default function AppPage() {
     </div>
   )
 }
-

@@ -2,6 +2,7 @@
 
 const p = <T>(path: string, body: Record<string, unknown>) =>
   post<T>(MESSAGING_BASE, path, body)
+
 const pProfile = <T>(path: string, body: Record<string, unknown>) =>
   post<T>(PROFILE_BASE, path, body)
 
@@ -128,3 +129,14 @@ export const listMessages = (cookie: string, channelId?: number, dmId?: number) 
 export const sendMessage = (cookie: string, content: string, channelId?: number, dmId?: number) =>
   p('/messages/send', { cookie, content, ...(channelId ? { channelId } : { dmId }) })
 
+/**
+ * Liste les membres d'un workspace avec leur profil
+ */
+export const listWorkspaceMembers = (cookie: string, workspaceId: number) =>
+  p('/workspaces/members/list', { cookie, workspaceId })
+
+/**
+ * Retourne les IDs des membres actuellement connectés via WebSocket
+ */
+export const onlineMembers = (cookie: string, workspaceId: number) =>
+  p('/workspaces/members/online', { cookie, workspaceId })
