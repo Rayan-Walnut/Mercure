@@ -12,7 +12,7 @@ import MemberList from '../components/MemberList'
 
 export default function AppPage() {
   const [view, setView] = useState<'workspace' | 'friends'>('workspace')
-  const [sidebarWidth, setSidebarWidth] = useState(460)
+  const [sidebarWidth, setSidebarWidth] = useState(360)
   const [isResizingSidebar, setIsResizingSidebar] = useState(false)
   const centerRef = useRef<HTMLElement | null>(null)
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
@@ -96,12 +96,13 @@ export default function AppPage() {
 
   function clampSidebarWidth(nextWidth: number) {
     const sectionWidth = centerRef.current?.clientWidth ?? 1000
-    const minWidth = 210
-    const maxWidth = Math.max(320, sectionWidth - 380)
+    const isWideViewport = typeof window !== 'undefined' ? window.innerWidth >= 1280 : true
+    const minWidth = 220
+    const maxWidth = Math.max(320, sectionWidth - (isWideViewport ? 380 : 180))
     return Math.max(minWidth, Math.min(maxWidth, nextWidth))
   }
 
-  function handleResizeStart(e: React.MouseEvent<HTMLDivElement>) {
+  function handleResizeStart(e: React.MouseEvent<HTMLElement>) {
     e.preventDefault()
     resizeRef.current = { startX: e.clientX, startWidth: sidebarWidth }
     setIsResizingSidebar(true)
@@ -145,7 +146,7 @@ export default function AppPage() {
       <header className="h-9 shrink-0 flex items-center justify-between px-3 bg-[#131413] [-webkit-app-region:drag]">
         <div className="flex items-center gap-2 px-1 py-1">
           <img src="/logo.jpg" alt="Mercure" className="h-6 w-6 rounded-md object-cover" />
-          <span className="text-[13px] font-semibold text-zinc-300">Mercure</span>
+          <span className="text-[13px] font-semibold text-zinc-100">Mercure</span>
         </div>
       </header>
 
@@ -175,12 +176,12 @@ export default function AppPage() {
                     <Composer />
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center opacity-20">
+                  <div className="flex flex-1 items-center justify-center opacity-40">
                     <div className="flex flex-col items-center gap-3">
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                       </svg>
-                      <p className="text-sm text-zinc-400">Selectionne un ami pour discuter</p>
+                      <p className="text-sm text-zinc-300">Selectionne un ami pour discuter</p>
                     </div>
                   </div>
                 )}
@@ -194,12 +195,17 @@ export default function AppPage() {
                 role="separator"
                 aria-orientation="vertical"
                 aria-label="Redimensionner la sidebar"
-                onMouseDown={handleResizeStart}
-                className="group relative w-4 shrink-0 cursor-col-resize"
+                className="group relative w-0 shrink-0"
               >
-                <span
-                  className={`pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-colors ${isResizingSidebar ? 'bg-indigo-400/70' : 'bg-white/[0.04] group-hover:bg-indigo-300/60'}`}
-                />
+                <button
+                  type="button"
+                  onMouseDown={handleResizeStart}
+                  className="absolute inset-y-0 -left-2 w-4 cursor-col-resize bg-transparent"
+                >
+                  <span
+                    className={`pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-colors ${isResizingSidebar ? 'bg-indigo-400/70' : 'bg-white/[0.04] group-hover:bg-indigo-300/60'}`}
+                  />
+                </button>
               </div>
 
               <div className="flex flex-col flex-1 min-w-0">
@@ -209,19 +215,21 @@ export default function AppPage() {
                     <Composer />
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center opacity-20">
+                  <div className="flex flex-1 items-center justify-center opacity-40">
                     <div className="flex flex-col items-center gap-3">
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                       </svg>
-                      <p className="text-sm text-zinc-400">Selectionne une discussion</p>
+                      <p className="text-sm text-zinc-300">Selectionne une discussion</p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* ── Liste des membres ── */}
-              <MemberList width={200} />
+              <div className="hidden xl:flex">
+                <MemberList width={200} />
+              </div>
             </>
           )}
         </section>

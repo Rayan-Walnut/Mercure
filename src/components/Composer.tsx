@@ -40,20 +40,20 @@ export default function Composer() {
   }
 
   return (
-    <div className="px-2 py-3 border-t border-white/[0.06] ">
-      <form onSubmit={handleSubmit} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 focus-within:ring-1 focus-within:ring-white/10 focus-within:ring-inset">
+    <div className="px-2 py-3 border-t border-white/[0.10]">
+      <form onSubmit={handleSubmit} className="flex items-center gap-3 bg-white/[0.08] rounded-xl px-4 py-2.5 focus-within:ring-1 focus-within:ring-white/20 focus-within:ring-inset">
         <input
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={sending}
           placeholder="Envoie un message..."
-          className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-600 outline-none"
+          className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-400 outline-none"
         />
         <button
           type="submit"
           disabled={sending || !content.trim()}
-          className="text-indigo-400 hover:text-indigo-300 disabled:opacity-30 transition"
+          className="text-indigo-300 hover:text-indigo-200 disabled:opacity-30 transition"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="22" y1="2" x2="11" y2="13" />

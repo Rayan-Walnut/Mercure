@@ -37,15 +37,15 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
 
   return (
     <>
-      <aside className="w-[70px] flex flex-col items-center py-4 gap-2 bg-[#0f0f0f] border-r border-white/[0.04]">
-        <div className="w-full px-3 mb-1">
+      <aside className="w-[62px] sm:w-[70px] flex flex-col items-center py-4 gap-2">
+        <div className="w-full px-2 sm:px-3 mb-1">
           <button
             onClick={onFriendsClick}
             title="Amis & messages"
             className={`w-full aspect-square rounded-2xl flex items-center justify-center transition-all duration-200
               ${friendsActive
                 ? 'bg-indigo-500 text-white rounded-[14px] shadow-lg shadow-indigo-500/20'
-                : 'bg-white/[0.06] text-zinc-400 hover:bg-white/10 hover:text-zinc-200 hover:rounded-[14px]'
+                : 'bg-white/[0.06] text-zinc-300 hover:bg-white/10 hover:text-zinc-100 hover:rounded-[14px]'
               }`}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -58,7 +58,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
         <div className="w-8 h-px bg-white/[0.06] rounded-full" />
 
         {/* Workspaces */}
-        <div className="flex flex-col items-center gap-2 w-full px-3">
+        <div className="flex flex-col items-center gap-2 w-full px-2 sm:px-3">
           {workspaces.map(ws => {
             const isActive = ws.id === activeWorkspaceId
             return (
@@ -74,7 +74,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
                 <div className={`w-full aspect-square rounded-2xl flex items-center justify-center text-xs font-bold overflow-hidden transition-all duration-200
                   ${isActive
                     ? 'rounded-[14px] bg-indigo-500 text-white shadow-lg'
-                    : 'bg-white/[0.06] text-zinc-400 hover:bg-white/10 hover:text-zinc-200 hover:rounded-[14px]'
+                    : 'bg-white/[0.06] text-zinc-300 hover:bg-white/10 hover:text-zinc-100 hover:rounded-[14px]'
                   }`}
                 >
                   {ws.icon
@@ -88,7 +88,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
         </div>
 
         {/* Bottom: Profile + Add workspace */}
-        <div className="mt-auto flex flex-col items-center gap-3 px-3 w-full">
+        <div className="mt-auto flex flex-col items-center gap-3 px-2 sm:px-3 w-full">
           {/* Avatar profil */}
           <button
             onClick={() => setShowProfile(true)}
@@ -113,7 +113,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
           <button
             onClick={() => setShowModal(true)}
             title="Nouveau workspace"
-            className="w-full aspect-square rounded-2xl flex items-center justify-center text-zinc-600 border border-dashed border-white/[0.08] hover:border-indigo-500/30 hover:text-indigo-400 hover:bg-indigo-500/5 hover:rounded-[14px] transition-all duration-200"
+            className="w-full aspect-square rounded-2xl flex items-center justify-center text-zinc-400 border border-dashed border-white/[0.08] hover:border-indigo-500/30 hover:text-indigo-300 hover:bg-indigo-500/5 hover:rounded-[14px] transition-all duration-200"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" />

@@ -111,7 +111,7 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`relative group flex items-center rounded-lg transition border border-transparent
+      className={`relative group flex items-center rounded-lg transition
         ${isDragging ? 'opacity-40' : ''}
         ${isActive ? 'bg-white/10 border-white/10' : 'hover:bg-white/5'}`}
     >
@@ -120,7 +120,7 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
         {...attributes}
         {...listeners}
         tabIndex={-1}
-        className="pl-2 pr-1 py-1.5 text-zinc-700 hover:text-zinc-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition shrink-0"
+        className="pl-2 pr-1 py-1.5 text-zinc-500 hover:text-zinc-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition shrink-0"
         onClick={e => e.stopPropagation()}
       >
         <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
@@ -146,13 +146,13 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
           <button
             onClick={onClick}
             onDoubleClick={startEdit}
-            className={`w-full text-left text-[13px] leading-5 ${isActive ? 'text-zinc-100' : 'text-zinc-400 group-hover:text-zinc-200'}`}
+            className={`w-full text-left text-[13px] leading-5 ${isActive ? 'text-zinc-100' : 'text-zinc-300 group-hover:text-zinc-100'}`}
           >
             <span className="inline-flex items-center gap-1.5 min-w-0">
-              <span className="text-zinc-500">#</span>
+              <span className="text-zinc-400">#</span>
               <span className="truncate">{ch.name}</span>
               {ch.isPrivate && (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-600 shrink-0">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-400 shrink-0">
                   <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
               )}
@@ -165,7 +165,7 @@ function SortableChannel({ ch, isActive, onClick, onDelete, onRenamed }: {
       {!editing && (
         <button
           onClick={e => { e.stopPropagation(); setShowMenu(v => !v) }}
-          className="pr-2 pl-1 py-1.5 text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition shrink-0"
+          className="pr-2 pl-1 py-1.5 text-zinc-400 hover:text-zinc-200 opacity-0 group-hover:opacity-100 transition shrink-0"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
@@ -209,7 +209,7 @@ function DeleteModal({ ch, cookie, onDone, onClose }: {
             </div>
             <div>
               <p className="text-sm font-semibold text-zinc-100">Supprimer #{ch.name} ?</p>
-              <p className="text-xs text-zinc-500 mt-0.5">Action irréversible. Tous les messages seront perdus.</p>
+              <p className="text-xs text-zinc-400 mt-0.5">Action irréversible. Tous les messages seront perdus.</p>
             </div>
           </div>
           <div className="flex justify-end gap-2">
@@ -329,17 +329,17 @@ export default function Sidebar({ onLogout, width }: Props) {
     <>
       <aside
         style={width ? { width: `${width}px` } : undefined}
-        className="shrink-0 flex flex-col bg-gradient-to-b from-[#1a1b1a] to-[#171817]"
+        className="shrink-0 flex flex-col bg-[#131413]"
       >
         {/* Header fixe */}
         <div className="shrink-0 flex items-center justify-between px-3 pt-4 pb-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 truncate">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-300 truncate">
             {workspaceName}
           </span>
           <button
             onClick={() => setShowCreateModal(true)}
             disabled={!activeWorkspaceId}
-            className="h-5 w-5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition flex items-center justify-center"
+            className="h-5 w-5 rounded-md text-zinc-300 hover:text-zinc-100 hover:bg-white/[0.08] transition flex items-center justify-center"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -356,7 +356,7 @@ export default function Sidebar({ onLogout, width }: Props) {
         >
           <div className="sidebar-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pb-4 space-y-1">
             {channels.length === 0 && !scopeLoading && (
-              <p className="px-2 text-xs text-zinc-600">Aucun canal</p>
+              <p className="px-2 text-xs text-zinc-400">Aucun canal</p>
             )}
 
             {categoryKeys.map(catKey => {
@@ -369,10 +369,10 @@ export default function Sidebar({ onLogout, width }: Props) {
                   {label && (
                     <button onClick={() => toggleCategory(catKey)} className="w-full flex items-center gap-1 px-2 py-1 group">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                        className={`text-zinc-600 transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}>
+                        className={`text-zinc-500 transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}>
                         <polyline points="6 9 12 15 18 9"/>
                       </svg>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500 group-hover:text-zinc-300 transition truncate">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 group-hover:text-zinc-200 transition truncate">
                         {label}
                       </span>
                     </button>
@@ -403,7 +403,7 @@ export default function Sidebar({ onLogout, width }: Props) {
             {draggingChannel && (
               <div className="px-2.5 py-1 text-[13px] rounded-lg bg-[#2a2b2a] border border-indigo-500/30 text-zinc-200 shadow-xl w-48">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="text-zinc-500">#</span>{draggingChannel.name}
+                  <span className="text-zinc-300">#</span>{draggingChannel.name}
                 </span>
               </div>
             )}

@@ -28,6 +28,10 @@
   width: 3px;
 }
 
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #171817; /* match sidebar darker background */
+}
+
 .sidebar-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
@@ -35,6 +39,10 @@
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.4); /* indigo subtil au hover */
+}
+
+.sidebar-scroll::-webkit-scrollbar-corner {
+  background: #171817;
 }
 
 /* Firefox */
@@ -45,5 +53,5 @@
 
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.06) #171817;
 }

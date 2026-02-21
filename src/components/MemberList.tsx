@@ -103,7 +103,7 @@ function MemberRow({ member, online }: { member: WorkspaceMember; online: boolea
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 min-w-0">
           <span className={`text-[13px] leading-5 truncate font-medium transition-colors duration-150
-            ${online ? 'text-zinc-200' : 'text-zinc-500'}`}
+            ${online ? 'text-zinc-100' : 'text-zinc-300'}`}
           >
             {member.user?.username ?? `User ${member.userId}`}
           </span>
@@ -120,7 +120,7 @@ function MemberRow({ member, online }: { member: WorkspaceMember; online: boolea
         </div>
 
         {member.user?.handle && (
-          <p className={`text-[11px] truncate leading-4 ${online ? 'text-zinc-500' : 'text-zinc-600'}`}>
+          <p className={`text-[11px] truncate leading-4 ${online ? 'text-zinc-400' : 'text-zinc-500'}`}>
             @{member.user.handle}
           </p>
         )}
@@ -150,11 +150,11 @@ function Section({ label, members, online, defaultOpen = true }: {
         <svg
           width="10" height="10" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-          className={`text-zinc-600 transition-transform duration-150 ${open ? '' : '-rotate-90'}`}
+          className={`text-zinc-500 transition-transform duration-150 ${open ? '' : '-rotate-90'}`}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500 group-hover:text-zinc-300 transition truncate">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 group-hover:text-zinc-200 transition truncate">
           {label} — {members.length}
         </span>
       </button>
@@ -250,7 +250,7 @@ export default function MemberList({ width }: Props) {
     >
       {/* Header */}
       <div className="shrink-0 px-3 pt-4 pb-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-300">
           Membres
         </span>
       </div>
@@ -266,7 +266,7 @@ export default function MemberList({ width }: Props) {
             <Section label="En ligne" members={online} online defaultOpen />
             <Section label="Hors ligne" members={offline} online={false} defaultOpen={false} />
             {!loading && members.length === 0 && (
-              <p className="px-2 text-xs text-zinc-600 pt-2">Aucun membre</p>
+              <p className="px-2 text-xs text-zinc-400 pt-2">Aucun membre</p>
             )}
           </>
         )}
