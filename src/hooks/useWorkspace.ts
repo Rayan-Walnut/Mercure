@@ -19,11 +19,12 @@ function isEmail(value?: string): value is string {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-function isResolvableAvatarValue(value?: string): value is string {
-  if (!value) return false
-  const raw = value.trim()
-  if (!raw) return false
-  return /^https?:\/\//i.test(raw) || raw.startsWith('//') || raw.startsWith('/')
+function pickNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const n = Number(value)
+    if (Number.isFinite(n) && n > 0) return n
+  }
+  return null
 }
 
 function normalizeMembers(data: any, userEmail?: string, userId?: number) {
@@ -32,14 +33,15 @@ function normalizeMembers(data: any, userEmail?: string, userId?: number) {
     const user = m.user ?? m
     const emailRaw = pickString(m.email, user.email)
     const avatarRaw = pickString(m.avatar, m.avatar_url, user.avatar, user.avatar_url)
+    const id = pickNumber(m.userId, m.id, user.id)
     return {
-      id: m.userId ?? m.id ?? user.id,
-      username: m.username ?? user.username ?? (isEmail(emailRaw) ? emailRaw : undefined) ?? `User ${m.id}`,
+      id,
+      username: m.username ?? user.username ?? (isEmail(emailRaw) ? emailRaw : undefined) ?? `User ${id ?? 'inconnu'}`,
       email: isEmail(emailRaw) ? emailRaw : undefined,
-      avatar: isResolvableAvatarValue(avatarRaw) ? resolveAvatarUrl(avatarRaw) : null,
+      avatar: resolveAvatarUrl(avatarRaw),
       role: m.role,
     }
-  }).filter((m: any) => m.id)
+  }).filter((m: any) => typeof m.id === 'number')
 
   const byId = userId
     ? members.find((m: any) => Number(m.id) === Number(userId))?.id
@@ -104,7 +106,7 @@ export function useWorkspace() {
         try {
           const usersInfo = await authApi.usersInfo(cookie, emailsWithoutAvatar) as any[]
           for (const u of usersInfo) {
-            if (u.email) avatarMap[u.email.toLowerCase()] = u.avatar ?? null
+            if (u.email) avatarMap[u.email.toLowerCase()] = resolveAvatarUrl(u.avatar) ?? null
           }
         } catch {
           // ignore
@@ -113,7 +115,7 @@ export function useWorkspace() {
 
       const enrichedMembers = members.map(m => {
         if (m.avatar) return m
-        if (m.id === currentUserId && user?.avatar) return { ...m, avatar: user.avatar }
+        if (m.id === currentUserId && user?.avatar) return { ...m, avatar: resolveAvatarUrl(user.avatar) }
         const mapped = m.email ? avatarMap[m.email.toLowerCase()] : null
         return { ...m, avatar: mapped ?? null }
       })
@@ -162,18 +164,20 @@ export function useWorkspace() {
       thread.type === 'dm' ? thread.id : undefined,
     )
     const messages = normalizeArray(data, ['messages', 'items']).map((m: any) => {
-      const member = useAppStore.getState().membersById.get(m.senderId)
+      const senderId = pickNumber(m.senderId, m.sender?.id)
+      const member = senderId ? useAppStore.getState().membersById.get(senderId) : undefined
+      const id = pickNumber(m.id)
       return {
-        id: m.id,
-        channelId: m.channelId ?? null,
-        dmId: m.dmId ?? null,
-        senderId: m.senderId ?? null,
-        senderAvatar: member?.avatar ?? (isResolvableAvatarValue(m.sender?.avatar) ? m.sender.avatar : null),
+        id: id ?? 0,
+        channelId: pickNumber(m.channelId) ?? null,
+        dmId: pickNumber(m.dmId) ?? null,
+        senderId: senderId ?? null,
+        senderAvatar: member?.avatar ?? resolveAvatarUrl(m.sender?.avatar),
         senderUsername: member?.username ?? m.sender?.username ?? null,
         content: String(m.content ?? ''),
-        createdAt: m.createdAt,
+        createdAt: typeof m.createdAt === 'string' ? m.createdAt : undefined,
       }
-    })
+    }).filter(m => m.id > 0)
     store.setMessages(messages)
   }, [cookie])
 

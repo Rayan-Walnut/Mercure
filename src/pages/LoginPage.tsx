@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { login, getAccountInfo } from '../api/auth'
 import { useSessionStore } from '../store/useSessionStore'
+import { resolveAvatarUrl } from '../utils/avatar'
 
 export default function LoginPage() {
   const setSession = useSessionStore(s => s.setSession)
@@ -29,7 +30,7 @@ export default function LoginPage() {
         email: accountInfo.email ?? email,
         nom: accountInfo.nom,
         prenom: accountInfo.prenom,
-        avatar: accountInfo.avatar,
+        avatar: resolveAvatarUrl(accountInfo.avatar) ?? undefined,
         handle: accountInfo.handle,
         username: accountInfo.handle,
       })

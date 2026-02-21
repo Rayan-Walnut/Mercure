@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useSessionStore } from '../store/useSessionStore'
 import * as api from '../api/messaging'
+import { resolveAvatarUrl } from '../utils/avatar'
 
 // Structure retournée par /workspaces/members/list
 type WorkspaceMember = {
@@ -28,6 +29,7 @@ function Avatar({ user, size = 28, online }: {
   size?: number
   online: boolean
 }) {
+  const avatar = resolveAvatarUrl(user?.avatar)
   const initials = (user?.username ?? '?')
     .split(' ')
     .map(w => w[0])
@@ -44,9 +46,9 @@ function Avatar({ user, size = 28, online }: {
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      {user?.avatar ? (
+      {avatar ? (
         <img
-          src={user.avatar}
+          src={avatar}
           alt={user.username}
           className="rounded-full object-cover w-full h-full"
         />

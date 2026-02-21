@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore'
 import { useSessionStore } from '../store/useSessionStore'
 import CreateWorkspaceModal from './CreateWorkspaceModal'
 import ProfileModal from './ProfileModal'
+import { resolveAvatarUrl } from '../utils/avatar'
 
 type Props = {
   onWorkspaceSelect: (id: number) => void
@@ -33,7 +34,7 @@ export default function WorkspaceRail({ onWorkspaceSelect, onFriendsClick, frien
     'Utilisateur'
 
   const initials = displayName.slice(0, 2).toUpperCase()
-  const avatarUrl = user?.avatar || currentMember?.avatar || null
+  const avatarUrl = resolveAvatarUrl(user?.avatar) ?? resolveAvatarUrl(currentMember?.avatar) ?? null
 
   return (
     <>

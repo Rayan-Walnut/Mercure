@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { resolveAvatarUrl } from '../utils/avatar'
 
 const KEYS = {
   cookie: 'mercure.session.cookie',
@@ -22,14 +23,33 @@ type SessionStore = {
   clearSession: () => void
 }
 
+function normalizeSessionUser(user: SessionUser | null): SessionUser | null {
+  if (!user) return null
+  return {
+    ...user,
+    avatar: resolveAvatarUrl(user.avatar) ?? undefined,
+  }
+}
+
+function loadUserFromStorage(): SessionUser | null {
+  try {
+    const raw = localStorage.getItem(KEYS.user)
+    if (!raw) return null
+    return normalizeSessionUser(JSON.parse(raw))
+  } catch {
+    return null
+  }
+}
+
 export const useSessionStore = create<SessionStore>((set) => ({
   cookie: localStorage.getItem(KEYS.cookie) ?? '',
-  user: JSON.parse(localStorage.getItem(KEYS.user) ?? 'null'),
+  user: loadUserFromStorage(),
 
   setSession: (cookie, user) => {
+    const normalizedUser = normalizeSessionUser(user) as SessionUser
     localStorage.setItem(KEYS.cookie, cookie)
-    localStorage.setItem(KEYS.user, JSON.stringify(user))
-    set({ cookie, user })
+    localStorage.setItem(KEYS.user, JSON.stringify(normalizedUser))
+    set({ cookie, user: normalizedUser })
   },
 
   clearSession: () => {

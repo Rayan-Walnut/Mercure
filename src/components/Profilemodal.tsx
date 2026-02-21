@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSessionStore } from '../store/useSessionStore'
 import { getAccountInfo } from '../api/auth'
+import { resolveAvatarUrl } from '../utils/avatar'
 
 const UPLOAD_BASE = 'https://upload.astracode.dev'
 
@@ -17,7 +18,7 @@ export default function ProfileModal({ onClose, onLogout }: Props) {
   const cookie = useSessionStore(s => s.cookie)
 
   const [nav, setNav] = useState<NavItem>('profil')
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '')
+  const [avatarUrl, setAvatarUrl] = useState(resolveAvatarUrl(user?.avatar) || '')
   const [uploading, setUploading] = useState(false)
   const [notice, setNotice] = useState('')
   const [dragOver, setDragOver] = useState(false)
@@ -43,11 +44,8 @@ export default function ProfileModal({ onClose, onLogout }: Props) {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.detail ?? 'Erreur upload')
       const newAvatar = data.avatar_url ?? data.url ?? null
-      if (newAvatar) {
-        setAvatarUrl(newAvatar)
-        await refreshSession(newAvatar)
-        setNotice('✓ Photo mise à jour')
-      }
+      await refreshSession(newAvatar ?? undefined)
+      setNotice('✓ Photo mise à jour')
     } catch (err) {
       setNotice(err instanceof Error ? err.message : 'Erreur upload')
     } finally {
@@ -58,14 +56,22 @@ export default function ProfileModal({ onClose, onLogout }: Props) {
   async function refreshSession(newAvatar?: string) {
     try {
       const info = await getAccountInfo(cookie) as any
+      const nextAvatar =
+        resolveAvatarUrl(info.avatar) ??
+        resolveAvatarUrl(info.avatar_url) ??
+        resolveAvatarUrl(newAvatar) ??
+        resolveAvatarUrl(user?.avatar) ??
+        undefined
+
       setSession(cookie, {
         email: info.email ?? user?.email,
         nom: info.nom,
         prenom: info.prenom,
-        avatar: newAvatar ?? info.avatar ?? user?.avatar,
+        avatar: nextAvatar,
         handle: info.handle,
         username: info.handle,
       })
+      setAvatarUrl(nextAvatar ?? '')
     } catch { }
   }
 
